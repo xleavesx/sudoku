@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    #table1 td {
+      border: 1px solid black;
+      min-width: 20px;
+      max-width: 20px;
+      height: 20px;
+      width: 20px;
+      max-height: 20px;
+      min-height: 20px;
+    }
+  </style>
+  <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+  <script>
+    
+let model = [
+    "700800120",
+    "090040000",
+    "000000003",
+    "100200570",
+    "000000060",
+    "002008000",
+    "070009350",
+    "000500006",
+    "300000008"
+]
+
+//function render 建table的funciton，<tr>表行<td>表格子
+function render(model) {
+    let t = $("#table1")
+    t.empty()
+    for (let rowi in model) {
+        let row = model[rowi]
+        let tdstr = ""
+        for (let coli in row) {
+
+            if (row[coli] == 0) {
+                tdstr += "<td></td>"
+            } else {
+                tdstr += "<td>" + row[coli] + "</td>"
+            }
+        }
+        t.append("<tr>" + tdstr + "</tr>")
+
+    }
+}
+
+
+
+
+// function bycol  x.push 在x数组里面加一个数，加入model 第i行第coli的数值，下面col的数组用的
+function bycol(model, coli) {
+    let x = []
+    for (let i = 0; i < 9; i++) {
+        x.push(model[i][coli])
+    }
+    return x.join("")
+}
+
+// function rest  indexOf方法可返回某个指定的字符串值在字符串中首次出现的位置，-1则为不存在
+function rest(a, b, c) {
+    let r = []
+    for (let i = 1; i <= 9; i++) {
+        if ((a.indexOf(i) == -1) && (b.indexOf(i) == -1) && (c.indexOf(i) == -1)) {
+            r.push(i)
+        }
+    }
+    return r
+}
+
+//function byblock  做小九宫格内数集，除以三去余数再乘三
+function byblock(model, rowi, coli) {
+    let r = []
+    let r3 = parseInt(rowi / 3)
+    let c3 = parseInt(coli / 3)
+    for (let i = r3 * 3; i < r3 * 3 + 3; i++) {
+        for (let j = c3 * 3; j < c3 * 3 + 3; j++) {
+            r.push(model[i][j])
+        }
+    }
+    return r.join("")
+}
+
+//function set 把model的字符串改数值，同时填入数字
+function set(model, rowi, coli, v){ 
+    let x = model[rowi].split("");
+    x[coli] = v;
+    model[rowi] = x.join("")
+}
+
+//function fill1 填一个数字进去  rows是一行的所有数字的数组，cols是一列所有数字的数组，cols是上面col的数组，bloks是上面的byblock的function小九宫格的数组
+//r是状态，1则说明只有一个数字可以填，填成功了则直接结束function，blank是这个格子可填数字的数组
+//minr代表长度，定义初始值之后如果最后有不止一个数字则找到长度最短的第一个格子，并使r=这个格子的 [rowi, coli, blank]
+//如果blank里面不止一个数字，则做一份model的copy进入nodes数组
+function fill1(model, nodes) {
+    let r = undefined
+    let minr = 9
+    for (let rowi in model) {
+        let row = model[rowi]
+        for (let coli in row) {
+            if (model[rowi][coli] == 0) {
+                //blank = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                let rows = model[rowi]
+                let cols = bycol(model, coli)
+                let blocks = byblock(model, rowi, coli)
+                //console.log(rowi, coli)
+                //console.log(rows, cols, blocks)
+                //console.log(rest(rows, cols, blocks))
+
+
+                let blank = rest(rows, cols, blocks)
+                if (blank.length == 1) {
+                    console.log("fill", rowi, coli, blank[0])//打印状态，填入，行，列，数字
+                    //model[rowi][coli] = blank[0]
+                    set(model, rowi, coli, blank[0])
+                    return 1
+                }
+                if(blank.length < minr){
+                    minr = blank.length
+                    r = [rowi, coli, blank]
+                }
+
+            }
+        }
+    }
+    if(r != undefined && r[2].length > 0){//r[2]是指的r的第三个值，即bland数组
+        for(let i=1; i<r[2].length; i++){
+            let newmodel = copy(model)
+            set(newmodel, r[0], r[1], r[2][i])//把copy出来的model从字符改数值，并填入newmodle
+            nodes.push(newmodel)//node一开始是空数组，放版本的
+        }
+        set(model, r[0], r[1], r[2][0])
+        return 1
+    }
+    return 0
+    //return 1
+    //return r
+}
+
+//function isfinished   表格填完了  join()转换字符串用的
+function isfinished(model){
+    return model.join("").indexOf(0) == -1
+}
+// function copy 就是复制了一个新的modelnew
+function copy(model){
+    let modelnew = []
+    for(let i in model){
+        modelnew.push(model[i])
+    }
+    return modelnew
+}
+// function fill(model){
+//     while(1){
+//         let r = fill1()
+//         if(r == 1){
+//             render(model)
+//             continue
+//         }
+//         if(r == 0){
+//             break
+//         }
+//         for(let i in r[2]){
+//             let modeltmp = copy(model)
+//             set(modeltmp, r
+//             fill(modeltmp)
+//         }
+//     }
+// }
+
+
+//总算开始运行了，ii是计数回退了多少次用的，pop（）移除最后一个数组元素，function return 1 即为true
+let nodes =[]
+$(document).ready(function () {//jquery的开头
+    render(model)
+    //while(1){
+    let ii = 1
+    while(fill1(model, nodes)){ render(model)}
+    
+    while( ! isfinished(model)){
+        ii += 1
+        model = nodes.pop()
+        console.log("back", nodes.length, model)
+        while(fill1(model, nodes)){ render(model)}
+    }
+    
+    console.log("total", ii)
+    //}
+    //while(fill1(newmodel, nodes)){ render(newmodel)}
+})
+
+
+
+    //求交集，交集长度等于1 则填入，不等于1则跳过。全部遍历一遍没有填入一个数字则看长度最小的2个，填入交集第一个数字，然后重新算一遍看有没有交集长度为1，有则填入，填入后重新算一遍
+    //方法2穷举法，先把所有的零改为a1——an，a1填入交集的第一个数字，a2填入交集的第一个数字
+
+  </script>
+
+
+</head>
+
+<body>
+  <table id="table1">
+  </table>
+  <p>To undestand the example better, we have added borders to the table.</p>
+
+</body>
+
+</html>
+
+
+
+
+<!-- //[1,2].length   
+   China cnd    https://www.bootcdn.cn    -->
